@@ -1,0 +1,143 @@
+{
+  "name": "omniroute-quota-tools",
+  "displayName": "OmniRoute Quota Tools",
+  "description": "CLI for Claude Code and VS Code sidebar for OmniRoute provider quota usage.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "commonjs",
+  "private": false,
+  "main": "./dist/extension.js",
+  "bin": {
+    "omniroute-quota": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "media"
+  ],
+  "scripts": {
+    "build": "tsc -p .",
+    "check": "tsc -p . --noEmit",
+    "watch": "tsc -watch -p .",
+    "package:vsix": "vsce package --no-dependencies",
+    "cli": "node ./dist/cli.js"
+  },
+  "engines": {
+    "node": ">=20",
+    "vscode": "^1.90.0"
+  },
+  "activationEvents": [
+    "onView:omnirouteQuota.providers",
+    "onCommand:omnirouteQuota.refresh",
+    "onCommand:omnirouteQuota.setToken"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "omniroute",
+    "quota",
+    "claude-code",
+    "providers",
+    "usage"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "OmniRoute Quota",
+      "properties": {
+        "omnirouteQuota.baseUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:20128",
+          "description": "OmniRoute dashboard/API base URL. Example: https://omniroute.example.com"
+        },
+        "omnirouteQuota.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Optional OmniRoute API key/access token with manage scope. Prefer the 'OmniRoute Quota: Set API Token' command, because VS Code settings can be synced/plain text."
+        },
+        "omnirouteQuota.authHeader": {
+          "type": "string",
+          "enum": ["authorization", "x-api-key", "x-omniroute-cli-token"],
+          "default": "authorization",
+          "description": "Header used for the token. 'authorization' sends Bearer <token>; 'x-api-key' and 'x-omniroute-cli-token' send the raw token."
+        },
+        "omnirouteQuota.hiddenProviders": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Provider slugs to hide from the sidebar, for example: ['codex', 'github']."
+        },
+        "omnirouteQuota.autoRefreshIntervalSeconds": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "Optional automatic sidebar refresh interval. 0 disables auto refresh."
+        },
+        "omnirouteQuota.showOnlyQuotaProviders": {
+          "type": "boolean",
+          "default": true,
+          "description": "Hide active providers that have no cached quota data."
+        }
+      }
+    },
+    "commands": [
+      { "command": "omnirouteQuota.refresh", "title": "OmniRoute Quota: Refresh" },
+      { "command": "omnirouteQuota.forceRefresh", "title": "OmniRoute Quota: Refresh from Providers" },
+      { "command": "omnirouteQuota.setToken", "title": "OmniRoute Quota: Set API Token" },
+      { "command": "omnirouteQuota.clearToken", "title": "OmniRoute Quota: Clear Stored API Token" },
+      { "command": "omnirouteQuota.hideProvider", "title": "OmniRoute Quota: Hide Provider" },
+      { "command": "omnirouteQuota.clearHiddenProviders", "title": "OmniRoute Quota: Show All Providers" },
+      { "command": "omnirouteQuota.openSettings", "title": "OmniRoute Quota: Open Settings" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "omnirouteQuota",
+          "title": "OmniRoute Quota",
+          "icon": "media/quota.svg"
+        }
+      ]
+    },
+    "views": {
+      "omnirouteQuota": [
+        {
+          "id": "omnirouteQuota.providers",
+          "name": "Provider Quotas"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "omnirouteQuota.refresh",
+          "when": "view == omnirouteQuota.providers",
+          "group": "navigation"
+        },
+        {
+          "command": "omnirouteQuota.forceRefresh",
+          "when": "view == omnirouteQuota.providers",
+          "group": "navigation"
+        },
+        {
+          "command": "omnirouteQuota.openSettings",
+          "when": "view == omnirouteQuota.providers",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "omnirouteQuota.hideProvider",
+          "when": "view == omnirouteQuota.providers && viewItem == provider",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.2.2",
+    "typescript": "^5.7.2"
+  }
+}
