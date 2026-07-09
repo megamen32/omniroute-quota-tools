@@ -54,13 +54,6 @@ function criticalThreshold(): number {
   return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 15;
 }
 
-function statusGlyph(freePercent: number | null): string {
-  if (freePercent === null) return "⚪";
-  if (freePercent <= criticalThreshold()) return "🔴";
-  if (freePercent <= 25) return "🟡";
-  return "🟢";
-}
-
 function compactReset(resetAt: string | null | undefined): string {
   if (!resetAt) return "";
   const date = new Date(resetAt);
@@ -170,9 +163,9 @@ class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Di
         const worstFree = Math.min(...entries.map((entry) => worstRemainingPercent(entry) ?? 100));
         const node = new QuotaNode(
           "provider",
-          `${statusGlyph(worstFree)} ${compactStatus(worstFree, mode)} ${provider}`,
+          provider,
           undefined,
-          `${mode} • ${accountCountLabel(entries.length)}`,
+          `${compactStatus(worstFree, mode)} ${mode} • ${accountCountLabel(entries.length)}`,
           vscode.TreeItemCollapsibleState.Expanded
         );
         node.iconPath = iconForFreePercent(worstFree);
@@ -188,9 +181,9 @@ class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Di
           const worstFree = worstRemainingPercent(entry);
           const node = new QuotaNode(
             "connection",
-            `${statusGlyph(worstFree)} ${compactStatus(worstFree, mode)} ${entry.name}`,
+            entry.name,
             entry,
-            mode,
+            `${compactStatus(worstFree, mode)} ${mode}`,
             vscode.TreeItemCollapsibleState.Collapsed
           );
           node.tooltip = [
@@ -212,9 +205,9 @@ class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Di
         const free = window.remainingPercent;
         const node = new QuotaNode(
           "window",
-          `${statusGlyph(window.exhausted ? 0 : free)} ${compactStatus(free, mode)} ${window.label}`,
+          window.label,
           element.entry,
-          `${mode}${compactReset(window.resetAt)}`
+          `${compactStatus(free, mode)} ${mode}${compactReset(window.resetAt)}`
         );
         node.tooltip = JSON.stringify(window.raw, null, 2);
         node.iconPath = iconForFreePercent(window.exhausted ? 0 : free);
@@ -226,7 +219,7 @@ class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Di
         children.unshift(node);
       }
       if (children.length === 0 && element.entry.summaryRemainingPercent !== null) {
-        const node = new QuotaNode("window", `${statusGlyph(element.entry.summaryRemainingPercent)} ${compactStatus(element.entry.summaryRemainingPercent, mode)} Summary`, element.entry, mode);
+        const node = new QuotaNode("window", "Summary", element.entry, `${compactStatus(element.entry.summaryRemainingPercent, mode)} ${mode}`);
         node.iconPath = iconForFreePercent(element.entry.summaryRemainingPercent);
         children.push(node);
       }
