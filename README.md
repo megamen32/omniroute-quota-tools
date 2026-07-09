@@ -63,10 +63,10 @@ Build and install locally:
 npm install
 npm run build
 npm run package:vsix
-code --install-extension omniroute-quota-tools-0.1.3.vsix
+code --install-extension omniroute-quota-tools-0.2.0.vsix
 ```
 
-Open the **OmniRoute Quota** activity bar icon. Use the title-bar refresh button for a cached refresh, **OmniRoute Quota: Refresh from Providers** to trigger OmniRoute's provider quota refresh endpoint first, and **OmniRoute Quota: Toggle Free/Used** to switch compact sidebar descriptions between remaining quota and inverted usage. Labels stay clean so providers with many accounts remain expandable. Red status starts at `omnirouteQuota.criticalThresholdPercent`, default 15%.
+Open the **OmniRoute Quota** activity bar icon. The sidebar is a Webview with real CSS progress bars. Provider cards expand to accounts, and each account can show multiple quota windows such as `5h`, `weekly`, and `monthly`. Use the title-bar refresh icon for cached refresh, **OmniRoute Quota: Refresh from Providers** for a live provider refresh, and **OmniRoute Quota: Toggle Free/Used** to switch bars between remaining quota and inverted usage. Red status starts at `omnirouteQuota.criticalThresholdPercent`, default 15%.
 
 ### Settings
 
