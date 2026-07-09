@@ -57,6 +57,21 @@ function compactReset(resetAt: string | null | undefined): string {
   return `↻ ${month}-${day} ${hour}:${minute}`;
 }
 
+function compactDurationUntil(targetAt: string | null | undefined): string {
+  if (!targetAt) return "";
+  const target = new Date(targetAt).getTime();
+  if (!Number.isFinite(target)) return "";
+  const diffMs = target - Date.now();
+  if (diffMs <= 0) return "expired";
+  const totalMinutes = Math.ceil(diffMs / 60000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days}d ${String(hours).padStart(2, "0")}h`;
+  if (hours > 0) return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+  return `${minutes}m`;
+}
+
 function htmlEscape(value: string | undefined | null): string {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -86,16 +101,17 @@ function renderBar(label: string, freePercent: number | null, mode: PercentMode,
   const status = statusClass(freePercent);
   const pct = formatPercent(shown);
   const reset = compactReset(resetAt);
+  const remaining = compactDurationUntil(resetAt);
   return `
     <div class="quota-bar-row ${status}">
       <div class="quota-bar-meta">
         <span class="quota-window" title="${htmlEscape(label)}">${htmlEscape(truncate(label, 28))}</span>
         <span class="quota-pct">${htmlEscape(pct)} ${htmlEscape(mode)}</span>
       </div>
-      <div class="quota-track" title="${htmlEscape(label)}: ${htmlEscape(pct)} ${htmlEscape(mode)}${reset ? ` • ${htmlEscape(reset)}` : ""}">
+      <div class="quota-track" title="${htmlEscape(label)}: ${htmlEscape(pct)} ${htmlEscape(mode)}${reset ? ` • ${htmlEscape(reset)}` : ""}${remaining ? ` • ${htmlEscape(remaining)} left` : ""}">
         <div class="quota-fill" style="width:${width}%"></div>
       </div>
-      ${reset ? `<div class="quota-reset">${htmlEscape(reset)}</div>` : ""}
+      ${reset ? `<div class="quota-reset"><span>${htmlEscape(reset)}</span>${remaining ? `<span class="quota-reset-left">${htmlEscape(remaining)} left</span>` : ""}</div>` : ""}
     </div>`;
 }
 
@@ -191,6 +207,8 @@ summary::-webkit-details-marker { display: none; }
 .quota-bar-meta { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: baseline; }
 .quota-window { font-size: 11px; color: var(--vscode-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .quota-pct, .quota-reset { font-size: 10px; color: var(--vscode-descriptionForeground); white-space: nowrap; }
+.quota-reset { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.quota-reset-left { text-align: right; color: var(--vscode-foreground); opacity: 0.78; }
 .quota-track { height: 8px; border-radius: 999px; background: var(--track); overflow: hidden; box-shadow: inset 0 0 0 1px var(--border); }
 .quota-fill { height: 100%; min-width: 2px; border-radius: inherit; background: var(--ok); transition: width 160ms ease; }
 .quota-bar-row.warn .quota-fill { background: var(--warn); }

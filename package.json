@@ -2,7 +2,7 @@
   "name": "omniroute-quota-tools",
   "displayName": "OmniRoute Quota Tools",
   "description": "CLI for Claude Code and VS Code sidebar for OmniRoute provider quota usage.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "license": "MIT",
   "type": "commonjs",
   "private": false,
