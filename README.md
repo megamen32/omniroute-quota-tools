@@ -63,10 +63,10 @@ Build and install locally:
 npm install
 npm run build
 npm run package:vsix
-code --install-extension omniroute-quota-tools-0.1.1.vsix
+code --install-extension omniroute-quota-tools-0.1.2.vsix
 ```
 
-Open the **OmniRoute Quota** activity bar icon. Use the title-bar refresh button for a cached refresh, **OmniRoute Quota: Refresh from Providers** to trigger OmniRoute's provider quota refresh endpoint first, and **OmniRoute Quota: Toggle Free/Used** to switch compact bars between remaining quota and inverted usage.
+Open the **OmniRoute Quota** activity bar icon. Use the title-bar refresh button for a cached refresh, **OmniRoute Quota: Refresh from Providers** to trigger OmniRoute's provider quota refresh endpoint first, and **OmniRoute Quota: Toggle Free/Used** to switch inline compact bars between remaining quota and inverted usage. Red status starts at `omnirouteQuota.criticalThresholdPercent`, default 15%.
 
 ### Settings
 
@@ -77,6 +77,7 @@ Open the **OmniRoute Quota** activity bar icon. Use the title-bar refresh button
 - `omnirouteQuota.autoRefreshIntervalSeconds`: `0` disables automatic refresh
 - `omnirouteQuota.showOnlyQuotaProviders`: hide providers with no quota data
 - `omnirouteQuota.percentMode`: `free` shows quota left, `used` shows inverted usage
+- `omnirouteQuota.criticalThresholdPercent`: remaining quota threshold for red/critical items, default `15`
 
 Recommended token setup:
 

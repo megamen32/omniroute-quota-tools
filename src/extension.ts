@@ -38,15 +38,27 @@ function displayPercent(freePercent: number | null, mode: PercentMode): number |
   return mode === "used" ? Math.max(0, Math.min(100, 100 - freePercent)) : freePercent;
 }
 
-function bar(value: number | null, mode: PercentMode): string {
-  if (value === null) return "□□□□□ n/a";
+function compactBar(value: number | null): string {
+  if (value === null) return "▱▱▱▱▱";
   const filled = Math.max(0, Math.min(5, Math.round(value / 20)));
-  const blocks = "■".repeat(filled) + "□".repeat(5 - filled);
-  return `${blocks} ${formatPercent(value)} ${mode}`;
+  return "▰".repeat(filled) + "▱".repeat(5 - filled);
 }
 
 function compactStatus(value: number | null, mode: PercentMode): string {
-  return bar(displayPercent(value, mode), mode);
+  const shown = displayPercent(value, mode);
+  return `${compactBar(shown)} ${formatPercent(shown)}`;
+}
+
+function criticalThreshold(): number {
+  const value = config().get<number>("criticalThresholdPercent");
+  return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 15;
+}
+
+function statusGlyph(freePercent: number | null): string {
+  if (freePercent === null) return "⚪";
+  if (freePercent <= criticalThreshold()) return "🔴";
+  if (freePercent <= 25) return "🟡";
+  return "🟢";
 }
 
 function compactReset(resetAt: string | null | undefined): string {
@@ -61,10 +73,13 @@ function compactReset(resetAt: string | null | undefined): string {
 }
 
 function iconForFreePercent(value: number | null): vscode.ThemeIcon {
-  if (value === 0) return new vscode.ThemeIcon("error");
-  if (value !== null && value <= 10) return new vscode.ThemeIcon("warning");
-  if (value !== null && value <= 25) return new vscode.ThemeIcon("circle-large-outline");
-  return new vscode.ThemeIcon("pass");
+  if (value !== null && value <= criticalThreshold()) {
+    return new vscode.ThemeIcon("error", new vscode.ThemeColor("charts.red"));
+  }
+  if (value !== null && value <= 25) {
+    return new vscode.ThemeIcon("warning", new vscode.ThemeColor("charts.yellow"));
+  }
+  return new vscode.ThemeIcon("pass", new vscode.ThemeColor("charts.green"));
 }
 
 function accountCountLabel(count: number): string {
@@ -155,13 +170,13 @@ class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Di
         const worstFree = Math.min(...entries.map((entry) => worstRemainingPercent(entry) ?? 100));
         const node = new QuotaNode(
           "provider",
-          provider,
+          `${statusGlyph(worstFree)} ${compactStatus(worstFree, mode)} ${provider}`,
           undefined,
-          `${compactStatus(worstFree, mode)} • ${accountCountLabel(entries.length)}`,
+          `${mode} • ${accountCountLabel(entries.length)}`,
           vscode.TreeItemCollapsibleState.Expanded
         );
         node.iconPath = iconForFreePercent(worstFree);
-        node.tooltip = `Provider ${provider}\nWorst free: ${formatPercent(worstFree)}\nMode: ${mode}`;
+        node.tooltip = `Provider ${provider}\nWorst free: ${formatPercent(worstFree)}\nShown as: ${mode}\nRed threshold: ${criticalThreshold()}% free`;
         return node;
       });
     }
@@ -173,9 +188,9 @@ class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Di
           const worstFree = worstRemainingPercent(entry);
           const node = new QuotaNode(
             "connection",
-            entry.name,
+            `${statusGlyph(worstFree)} ${compactStatus(worstFree, mode)} ${entry.name}`,
             entry,
-            compactStatus(worstFree, mode),
+            mode,
             vscode.TreeItemCollapsibleState.Collapsed
           );
           node.tooltip = [
@@ -183,6 +198,7 @@ class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Di
             `Connection: ${entry.connectionId}`,
             `Worst free: ${formatPercent(worstFree)}`,
             `Shown as: ${mode}`,
+            `Red threshold: ${criticalThreshold()}% free`,
             entry.fetchedAt ? `Fetched: ${entry.fetchedAt}` : "",
             entry.message ? `Message: ${entry.message}` : "",
           ].filter(Boolean).join("\n");
@@ -196,9 +212,9 @@ class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Di
         const free = window.remainingPercent;
         const node = new QuotaNode(
           "window",
-          window.label,
+          `${statusGlyph(window.exhausted ? 0 : free)} ${compactStatus(free, mode)} ${window.label}`,
           element.entry,
-          `${compactStatus(free, mode)}${compactReset(window.resetAt)}`
+          `${mode}${compactReset(window.resetAt)}`
         );
         node.tooltip = JSON.stringify(window.raw, null, 2);
         node.iconPath = iconForFreePercent(window.exhausted ? 0 : free);
@@ -210,7 +226,7 @@ class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Di
         children.unshift(node);
       }
       if (children.length === 0 && element.entry.summaryRemainingPercent !== null) {
-        const node = new QuotaNode("window", "Summary", element.entry, compactStatus(element.entry.summaryRemainingPercent, mode));
+        const node = new QuotaNode("window", `${statusGlyph(element.entry.summaryRemainingPercent)} ${compactStatus(element.entry.summaryRemainingPercent, mode)} Summary`, element.entry, mode);
         node.iconPath = iconForFreePercent(element.entry.summaryRemainingPercent);
         children.push(node);
       }
