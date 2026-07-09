@@ -4,12 +4,12 @@ import {
   refreshProviderCaches,
   formatPercent,
   worstRemainingPercent,
-  statusIcon,
   type ProviderQuotaEntry,
   type QuotaSnapshot,
 } from "./omnirouteClient";
 
 type NodeKind = "root" | "provider" | "connection" | "window" | "message";
+type PercentMode = "free" | "used";
 
 class QuotaNode extends vscode.TreeItem {
   constructor(
@@ -27,6 +27,48 @@ class QuotaNode extends vscode.TreeItem {
 
 function config(): vscode.WorkspaceConfiguration {
   return vscode.workspace.getConfiguration("omnirouteQuota");
+}
+
+function percentMode(): PercentMode {
+  return config().get<PercentMode>("percentMode") === "used" ? "used" : "free";
+}
+
+function displayPercent(freePercent: number | null, mode: PercentMode): number | null {
+  if (freePercent === null) return null;
+  return mode === "used" ? Math.max(0, Math.min(100, 100 - freePercent)) : freePercent;
+}
+
+function bar(value: number | null, mode: PercentMode): string {
+  if (value === null) return "□□□□□ n/a";
+  const filled = Math.max(0, Math.min(5, Math.round(value / 20)));
+  const blocks = "■".repeat(filled) + "□".repeat(5 - filled);
+  return `${blocks} ${formatPercent(value)} ${mode}`;
+}
+
+function compactStatus(value: number | null, mode: PercentMode): string {
+  return bar(displayPercent(value, mode), mode);
+}
+
+function compactReset(resetAt: string | null | undefined): string {
+  if (!resetAt) return "";
+  const date = new Date(resetAt);
+  if (!Number.isFinite(date.getTime())) return " ↻";
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return ` ↻ ${month}-${day} ${hour}:${minute}`;
+}
+
+function iconForFreePercent(value: number | null): vscode.ThemeIcon {
+  if (value === 0) return new vscode.ThemeIcon("error");
+  if (value !== null && value <= 10) return new vscode.ThemeIcon("warning");
+  if (value !== null && value <= 25) return new vscode.ThemeIcon("circle-large-outline");
+  return new vscode.ThemeIcon("pass");
+}
+
+function accountCountLabel(count: number): string {
+  return count === 1 ? "1 acct" : `${count} accts`;
 }
 
 class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Disposable {
@@ -99,6 +141,7 @@ class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Di
   }
 
   getChildren(element?: QuotaNode): QuotaNode[] {
+    const mode = percentMode();
     if (this.error) return [new QuotaNode("message", "Refresh failed", undefined, this.error)];
     if (!this.snapshot) return [new QuotaNode("message", "No data yet", undefined, "Run refresh")];
 
@@ -109,10 +152,16 @@ class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Di
         byProvider.get(entry.provider)?.push(entry);
       }
       return [...byProvider.entries()].map(([provider, entries]) => {
-        const worst = Math.min(...entries.map((entry) => worstRemainingPercent(entry) ?? 100));
-        const node = new QuotaNode("provider", `${provider}`, undefined, `${formatPercent(worst)} worst • ${entries.length} account${entries.length === 1 ? "" : "s"}`, vscode.TreeItemCollapsibleState.Expanded);
-        node.iconPath = new vscode.ThemeIcon(worst <= 10 ? "warning" : "server-environment");
-        node.tooltip = `Provider ${provider}. Worst remaining quota: ${formatPercent(worst)}.`;
+        const worstFree = Math.min(...entries.map((entry) => worstRemainingPercent(entry) ?? 100));
+        const node = new QuotaNode(
+          "provider",
+          provider,
+          undefined,
+          `${compactStatus(worstFree, mode)} • ${accountCountLabel(entries.length)}`,
+          vscode.TreeItemCollapsibleState.Expanded
+        );
+        node.iconPath = iconForFreePercent(worstFree);
+        node.tooltip = `Provider ${provider}\nWorst free: ${formatPercent(worstFree)}\nMode: ${mode}`;
         return node;
       });
     }
@@ -121,33 +170,49 @@ class QuotaTreeProvider implements vscode.TreeDataProvider<QuotaNode>, vscode.Di
       return this.snapshot.entries
         .filter((entry) => entry.provider === element.labelText)
         .map((entry) => {
-          const worst = worstRemainingPercent(entry);
-          const node = new QuotaNode("connection", `${statusIcon(entry)} ${entry.name}`, entry, `${formatPercent(worst)} left`, vscode.TreeItemCollapsibleState.Collapsed);
+          const worstFree = worstRemainingPercent(entry);
+          const node = new QuotaNode(
+            "connection",
+            entry.name,
+            entry,
+            compactStatus(worstFree, mode),
+            vscode.TreeItemCollapsibleState.Collapsed
+          );
           node.tooltip = [
             `Provider: ${entry.provider}`,
             `Connection: ${entry.connectionId}`,
-            `Worst left: ${formatPercent(worst)}`,
+            `Worst free: ${formatPercent(worstFree)}`,
+            `Shown as: ${mode}`,
             entry.fetchedAt ? `Fetched: ${entry.fetchedAt}` : "",
             entry.message ? `Message: ${entry.message}` : "",
           ].filter(Boolean).join("\n");
-          node.iconPath = new vscode.ThemeIcon(worst !== null && worst <= 10 ? "warning" : "account");
+          node.iconPath = iconForFreePercent(worstFree);
           return node;
         });
     }
 
     if (element.kind === "connection" && element.entry) {
       const children = element.entry.windows.map((window) => {
-        const reset = window.resetAt ? ` • reset ${window.resetAt}` : "";
-        const node = new QuotaNode("window", window.label, element.entry, `${formatPercent(window.remainingPercent)} left${reset}`);
+        const free = window.remainingPercent;
+        const node = new QuotaNode(
+          "window",
+          window.label,
+          element.entry,
+          `${compactStatus(free, mode)}${compactReset(window.resetAt)}`
+        );
         node.tooltip = JSON.stringify(window.raw, null, 2);
-        node.iconPath = new vscode.ThemeIcon(window.exhausted ? "error" : (window.remainingPercent ?? 100) <= 10 ? "warning" : "pulse");
+        node.iconPath = iconForFreePercent(window.exhausted ? 0 : free);
         return node;
       });
       if (element.entry.message) {
-        children.unshift(new QuotaNode("message", "Message", element.entry, element.entry.message));
+        const node = new QuotaNode("message", "Message", element.entry, element.entry.message);
+        node.iconPath = new vscode.ThemeIcon("info");
+        children.unshift(node);
       }
       if (children.length === 0 && element.entry.summaryRemainingPercent !== null) {
-        children.push(new QuotaNode("window", "Summary", element.entry, `${formatPercent(element.entry.summaryRemainingPercent)} left`));
+        const node = new QuotaNode("window", "Summary", element.entry, compactStatus(element.entry.summaryRemainingPercent, mode));
+        node.iconPath = iconForFreePercent(element.entry.summaryRemainingPercent);
+        children.push(node);
       }
       if (children.length === 0) {
         children.push(new QuotaNode("message", "No quota windows", element.entry, "Cached data is empty"));
@@ -166,6 +231,12 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand("omnirouteQuota.refresh", () => provider.refresh(true)),
     vscode.commands.registerCommand("omnirouteQuota.forceRefresh", () => provider.forceRefresh()),
+    vscode.commands.registerCommand("omnirouteQuota.togglePercentMode", async () => {
+      const next = percentMode() === "free" ? "used" : "free";
+      await config().update("percentMode", next, vscode.ConfigurationTarget.Global);
+      vscode.window.setStatusBarMessage(`OmniRoute quota mode: ${next}`, 2500);
+      await provider.refresh(false);
+    }),
     vscode.commands.registerCommand("omnirouteQuota.openSettings", () => vscode.commands.executeCommand("workbench.action.openSettings", "@ext:omniroute-quota-tools")),
     vscode.commands.registerCommand("omnirouteQuota.setToken", async () => {
       const token = await vscode.window.showInputBox({ prompt: "OmniRoute API key/access token with manage scope", password: true, ignoreFocusOut: true });

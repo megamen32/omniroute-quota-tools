@@ -2,7 +2,7 @@
   "name": "omniroute-quota-tools",
   "displayName": "OmniRoute Quota Tools",
   "description": "CLI for Claude Code and VS Code sidebar for OmniRoute provider quota usage.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "type": "commonjs",
   "private": false,
@@ -84,6 +84,15 @@
           "type": "boolean",
           "default": true,
           "description": "Hide active providers that have no cached quota data."
+        },
+        "omnirouteQuota.percentMode": {
+          "type": "string",
+          "enum": [
+            "free",
+            "used"
+          ],
+          "default": "free",
+          "description": "Whether compact bars show quota remaining ('free') or inverted quota usage ('used')."
         }
       }
     },
@@ -95,6 +104,10 @@
       {
         "command": "omnirouteQuota.forceRefresh",
         "title": "OmniRoute Quota: Refresh from Providers"
+      },
+      {
+        "command": "omnirouteQuota.togglePercentMode",
+        "title": "OmniRoute Quota: Toggle Free/Used"
       },
       {
         "command": "omnirouteQuota.setToken",
@@ -143,6 +156,11 @@
         },
         {
           "command": "omnirouteQuota.forceRefresh",
+          "when": "view == omnirouteQuota.providers",
+          "group": "navigation"
+        },
+        {
+          "command": "omnirouteQuota.togglePercentMode",
           "when": "view == omnirouteQuota.providers",
           "group": "navigation"
         },

@@ -321,10 +321,3 @@ export function worstRemainingPercent(entry: ProviderQuotaEntry): number | null 
   return Math.min(...values);
 }
 
-export function statusIcon(entry: ProviderQuotaEntry): string {
-  const worst = worstRemainingPercent(entry);
-  if (entry.windows.some((window) => window.exhausted === true) || worst === 0) return "$(error)";
-  if (worst !== null && worst <= 10) return "$(warning)";
-  if (worst !== null && worst <= 25) return "$(circle-large-outline)";
-  return "$(check)";
-}
