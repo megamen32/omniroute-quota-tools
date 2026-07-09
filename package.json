@@ -2,7 +2,7 @@
   "name": "omniroute-quota-tools",
   "displayName": "OmniRoute Quota Tools",
   "description": "CLI for Claude Code and VS Code sidebar for OmniRoute provider quota usage.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "license": "MIT",
   "type": "commonjs",
   "private": false,
@@ -30,7 +30,9 @@
   "activationEvents": [
     "onView:omnirouteQuota.providers",
     "onCommand:omnirouteQuota.refresh",
-    "onCommand:omnirouteQuota.setToken"
+    "onCommand:omnirouteQuota.setToken",
+    "onCommand:omnirouteQuota.forceRefresh",
+    "onCommand:omnirouteQuota.togglePercentMode"
   ],
   "categories": [
     "Other"
@@ -150,7 +152,9 @@
       "omnirouteQuota": [
         {
           "id": "omnirouteQuota.providers",
-          "name": "Provider Quotas"
+          "name": "Provider Quotas",
+          "type": "webview",
+          "icon": "media/quota-view.svg"
         }
       ]
     },
