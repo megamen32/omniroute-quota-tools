@@ -58,13 +58,19 @@
         },
         "omnirouteQuota.authHeader": {
           "type": "string",
-          "enum": ["authorization", "x-api-key", "x-omniroute-cli-token"],
+          "enum": [
+            "authorization",
+            "x-api-key",
+            "x-omniroute-cli-token"
+          ],
           "default": "authorization",
           "description": "Header used for the token. 'authorization' sends Bearer <token>; 'x-api-key' and 'x-omniroute-cli-token' send the raw token."
         },
         "omnirouteQuota.hiddenProviders": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "default": [],
           "description": "Provider slugs to hide from the sidebar, for example: ['codex', 'github']."
         },
@@ -82,13 +88,34 @@
       }
     },
     "commands": [
-      { "command": "omnirouteQuota.refresh", "title": "OmniRoute Quota: Refresh" },
-      { "command": "omnirouteQuota.forceRefresh", "title": "OmniRoute Quota: Refresh from Providers" },
-      { "command": "omnirouteQuota.setToken", "title": "OmniRoute Quota: Set API Token" },
-      { "command": "omnirouteQuota.clearToken", "title": "OmniRoute Quota: Clear Stored API Token" },
-      { "command": "omnirouteQuota.hideProvider", "title": "OmniRoute Quota: Hide Provider" },
-      { "command": "omnirouteQuota.clearHiddenProviders", "title": "OmniRoute Quota: Show All Providers" },
-      { "command": "omnirouteQuota.openSettings", "title": "OmniRoute Quota: Open Settings" }
+      {
+        "command": "omnirouteQuota.refresh",
+        "title": "OmniRoute Quota: Refresh"
+      },
+      {
+        "command": "omnirouteQuota.forceRefresh",
+        "title": "OmniRoute Quota: Refresh from Providers"
+      },
+      {
+        "command": "omnirouteQuota.setToken",
+        "title": "OmniRoute Quota: Set API Token"
+      },
+      {
+        "command": "omnirouteQuota.clearToken",
+        "title": "OmniRoute Quota: Clear Stored API Token"
+      },
+      {
+        "command": "omnirouteQuota.hideProvider",
+        "title": "OmniRoute Quota: Hide Provider"
+      },
+      {
+        "command": "omnirouteQuota.clearHiddenProviders",
+        "title": "OmniRoute Quota: Show All Providers"
+      },
+      {
+        "command": "omnirouteQuota.openSettings",
+        "title": "OmniRoute Quota: Open Settings"
+      }
     ],
     "viewsContainers": {
       "activitybar": [
@@ -139,5 +166,13 @@
     "@types/vscode": "^1.90.0",
     "@vscode/vsce": "^3.2.2",
     "typescript": "^5.7.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/megamen32/omniroute-quota-tools.git"
+  },
+  "bugs": {
+    "url": "https://github.com/megamen32/omniroute-quota-tools/issues"
+  },
+  "homepage": "https://github.com/megamen32/omniroute-quota-tools#readme"
 }
