@@ -1,5 +1,11 @@
 # OmniRoute Quota Tools
 
+[Русский](./README.ru.md) · [简体中文](./README.zh.md)
+
+![OmniRoute quota workflow](docs/assets/readme-hero.png)
+
+> Type-check validated in this workspace with Node.js 22.22.3 and npm 10.9.8.
+
 CLI + VS Code sidebar for OmniRoute provider quotas. It mirrors the OmniRoute dashboard quota surfaces by reading:
 
 - `GET /api/providers/client`
@@ -8,6 +14,28 @@ CLI + VS Code sidebar for OmniRoute provider quotas. It mirrors the OmniRoute da
 - optional manual refresh with `POST /api/usage/provider-limits`
 
 The CLI is useful from Claude Code hooks/commands; the VS Code extension shows all quota-aware provider accounts in a sidebar, with provider hiding and manual refresh.
+
+## Quick start
+
+The published CLI requires Node.js 20 or newer. Install it globally and check the command with one line:
+
+```bash
+npm install -g omniroute-quota-tools && omniroute-quota --help
+```
+
+For a local checkout, install the locked dependencies and compile the CLI/extension:
+
+```bash
+npm ci && npm run build
+```
+
+Point the tool at OmniRoute, then query the cached quota data:
+
+```bash
+OMNIROUTE_BASE_URL=http://127.0.0.1:20128 omniroute-quota
+```
+
+Use `OMNIROUTE_API_KEY` (or `OMNIROUTE_TOKEN`) when the server requires a token with `manage` scope. The `--refresh` option performs the provider refresh before reading quotas.
 
 ## CLI usage
 
