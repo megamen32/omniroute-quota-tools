@@ -4,43 +4,57 @@
 
 ![OmniRoute quota workflow](docs/assets/readme-hero.png)
 
-> Type-check validated in this workspace with Node.js 22.22.3 and npm 10.9.8.
+> See every provider quota window from the terminal or a VS Code sidebar, without opening the OmniRoute dashboard.
 
-CLI + VS Code sidebar for OmniRoute provider quotas. It mirrors the OmniRoute dashboard quota surfaces by reading:
+OmniRoute Quota Tools turns OmniRoute's quota endpoints into a scriptable CLI and a compact VS Code view. It reads the same provider and usage surfaces your OmniRoute instance exposes; it does not invent quota data or promise provider availability.
+
+## Why it is useful
+
+- Check all quota-aware providers in one command or sidebar.
+- Refresh provider limits when you need a current snapshot.
+- Show account-level windows such as `5h`, weekly, and monthly when returned by OmniRoute.
+- Emit JSON for Claude Code hooks and other automation.
+- Hide noisy providers and keep API tokens in VS Code SecretStorage.
+
+The CLI reads:
 
 - `GET /api/providers/client`
 - `GET /api/usage/provider-limits`
 - `GET /api/usage/quota`
 - optional manual refresh with `POST /api/usage/provider-limits`
 
-The CLI is useful from Claude Code hooks/commands; the VS Code extension shows all quota-aware provider accounts in a sidebar, with provider hiding and manual refresh.
+## Install
 
-## Quick start
-
-The published CLI requires Node.js 20 or newer. Install it globally and check the command with one line:
+The CLI requires Node.js 20 or newer. From a checkout, install the tracked package and check the command with one line:
 
 ```bash
-npm install -g omniroute-quota-tools && omniroute-quota --help
+npm install --global . && omniroute-quota --help
 ```
 
-For a local checkout, install the locked dependencies and compile the CLI/extension:
+The package metadata maps `omniroute-quota` to the checked-in `dist/cli.js`; no compile step is needed for this install path. This repository does not currently publish an npm registry package, so the README does not advertise one.
+
+For the VS Code sidebar, package the extension from this repository:
 
 ```bash
-npm ci && npm run build
+npm ci && npm run build && npm run package:vsix
 ```
 
-Point the tool at OmniRoute, then query the cached quota data:
+## Start in minutes
+
+Point the CLI at OmniRoute, then query cached quota data:
 
 ```bash
 OMNIROUTE_BASE_URL=http://127.0.0.1:20128 omniroute-quota
 ```
 
-Use `OMNIROUTE_API_KEY` (or `OMNIROUTE_TOKEN`) when the server requires a token with `manage` scope. The `--refresh` option performs the provider refresh before reading quotas.
+Use `OMNIROUTE_API_KEY` (or `OMNIROUTE_TOKEN`) when the server requires a token with `manage` scope. `--refresh` asks OmniRoute to refresh provider limits before reading them.
+
+Detailed [CLI and VS Code setup](docs/USAGE.md), [configuration](docs/CONFIGURATION.md), and [API behavior](docs/API.md) live below the fold.
 
 ## CLI usage
 
 ```bash
-npm install -g omniroute-quota-tools
+npm install --global .
 
 export OMNIROUTE_BASE_URL="https://omniroute.example.com"
 export OMNIROUTE_API_KEY="oma_or_api_key_with_manage_scope"
@@ -85,7 +99,7 @@ If the user asks for machine-readable output, run:
 
 ## VS Code extension
 
-Build and install locally:
+Build and install the VS Code package locally:
 
 ```bash
 npm install
@@ -113,6 +127,8 @@ Recommended token setup:
 2. Paste an OmniRoute access token/API key with `manage` scope.
 3. The token is stored in VS Code SecretStorage, not committed to settings.
 
-## Notes
+## Scope and limits
 
-The extension never ships secrets. It only uses tokens from VS Code SecretStorage, settings, or environment variables. The CLI uses `OMNIROUTE_API_KEY`, `OMNIROUTE_TOKEN`, or an explicit `--token`.
+This tool is a client for an existing OmniRoute instance. It needs network access to that instance and a token when the instance requires one; it does not provision providers, change quota policy, or guarantee that a provider exposes quota windows.
+
+The extension never ships secrets. It uses tokens from VS Code SecretStorage, settings, or environment variables. The CLI uses `OMNIROUTE_API_KEY`, `OMNIROUTE_TOKEN`, or an explicit `--token`.
